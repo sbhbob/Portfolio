@@ -9,28 +9,40 @@ import UIKit
 
 class UserTableViewController: UITableViewController {
     
-    static var amountOfPeople: Int = 1
-    
-    static var users: [User] = []
-    
-    static var addressBool: Bool = true
-    static var emailBool: Bool = true
-    static var createdBool: Bool = true
-    static var balanceBool: Bool = true
-    static var currentViewController: UserTableViewController?
-    
-    deinit {
-        Self.currentViewController = nil
-    }
-    
+    var inclusionParameters = ""
+    var amountOfPeople: String = ""
+    var users: [User] = []
+  
     override func viewDidLoad() {
         super.viewDidLoad()
-        Self.currentViewController = self
         // Don't ever register cells!
         // Only need to register a cell if it's created outside of your storyboard file.
 //        self.tableView.register(UserTableViewCell.self, forCellReuseIdentifier: "userCell")
+        makeNetworkCall()
+    }
+    
+    func makeNetworkCall() {
+        let url = URL(string: "https://randomuser.me/api/?results=\(amountOfPeople)&inc=\(inclusionParameters)&format=pretty")!
+        
+        URLSession.shared.dataTask(with: url) { (data, response, error) in
+            guard let data = data else { return }
+            do {
+                let response = try JSONDecoder().decode(RandomUserResponse.self, from: data)
+                print("response", response.results.count)
+                self.users = response.results
+                
+                DispatchQueue.main.async {
+                    self.tableView.reloadData()
+                }
 
-        tableView.reloadData()
+
+                print("utvc.users", self.users.count)
+                
+            } catch let jsonErr {
+                print("Error serializing json:", jsonErr)
+            }
+        }.resume()
+
     }
 
     // MARK: - Table view data source
@@ -42,8 +54,8 @@ class UserTableViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        print("users after", UserTableViewController.users.count)
-        return UserTableViewController.users.count
+        print("users after", users.count)
+        return users.count
     }
 
     
@@ -51,7 +63,7 @@ class UserTableViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "userCell", for: indexPath) as! UserTableViewCell
 //        cell.awakeFromNib()
         cell.indexPath = indexPath
-        let user = UserTableViewController.users[indexPath.row]
+        let user = users[indexPath.row]
         cell.configure(with: user)
             
         return cell

@@ -16,18 +16,23 @@ class ViewController: UIViewController {
     @IBOutlet weak var loginSwitch: UISwitch!
     @IBOutlet weak var registeredSwitch: UISwitch!
     
+    var inclusionParameters = ""
+    var amountOfPeople = "0"
     
     @IBAction func goButtonTapped(_ sender: Any) {
-        UserTableViewController.amountOfPeople = Int(amountOfPeopleSlider.value)
-        print(Int(amountOfPeopleSlider.value))
-        Task {
-            fetchUser()
-        }
+     
+        
+        saveSettings()
+        
     }
     
-    func fetchUser() {
+    func saveSettings() {
         let results = String(Int(amountOfPeopleSlider.value))
         print(results)
+        amountOfPeople = results
+        
+        
+        
         var inc: String = "name"
         if locationSwitch.isOn == true {
             inc.append(",location")
@@ -43,26 +48,8 @@ class ViewController: UIViewController {
         }
         inc.append(",picture")
         
-        let url = URL(string: "https://randomuser.me/api/?results=\(results)&inc=\(inc)&format=pretty")!
+        inclusionParameters = inc
         
-        URLSession.shared.dataTask(with: url) { (data, response, error) in
-            guard let data = data else { return }
-            do {
-                let response = try JSONDecoder().decode(RandomUserResponse.self, from: data)
-                print("response", response.results.count)
-                UserTableViewController.users = response.results
-                
-                DispatchQueue.main.async {
-                    UserTableViewController.currentViewController?.tableView.reloadData()
-                }
-
-
-                print("utvc.users", UserTableViewController.users.count)
-                
-            } catch let jsonErr {
-                print("Error serializing json:", jsonErr)
-            }
-        }.resume()
     }
     
     
@@ -73,4 +60,10 @@ class ViewController: UIViewController {
         amountOfPeopleSlider.maximumValue = 30
     }
     
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let userTableViewController = segue.destination as? UserTableViewController {
+            userTableViewController.inclusionParameters = inclusionParameters
+            userTableViewController.amountOfPeople = amountOfPeople
+        }
+    }
 }
